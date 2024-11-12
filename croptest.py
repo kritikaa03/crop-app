@@ -15,40 +15,277 @@ import os
 import timm
 from timm import create_model
 
-# Set up device for computation
+# Check if CUDA is available and use GPU, else fall back to CPU
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# UI enhancements for a farmer-friendly interface
+# Set up the page with a title and wide layout
 st.set_page_config(page_title="Crop Recognition and Health Status", page_icon="🌱", layout="wide")
 
-st.title("🌾 Welcome to Farmers' Crop Assistant")
-st.subheader("This tool helps you identify crop types, evaluate their health status, and predict potential diseases if the crop appears unhealthy. By simply uploading an image of your crop, our system can quickly analyze and provide insights to support better crop management and yield optimization.")
+# Image path
+image_path = "images/farm.jpg"
 
-st.subheader("""
-This portal provides three main features to assist you in crop monitoring:
+# Open the image
+image = Image.open(image_path)
 
-1. **Crop Recognition**: Easily identify the type of crop by uploading an image. Our system leverages advanced machine learning models to recognize a wide variety of crops with high accuracy.
-   
-2. **Health Status Evaluation**: Check the health of your crop by uploading an image. The tool analyzes the crop image to determine if it’s healthy or showing signs of stress, such as nutrient deficiency or pest attacks.
-   
-3. **Disease Type Prediction**: If your crop is classified as unhealthy, this feature enables you to get a more detailed analysis. Upload an image of the affected crop, and our system will attempt to identify specific diseases, helping you take preventive or corrective measures.
+# Custom CSS for enhanced styling
+st.markdown("""
+    <style>
+        
+        
+        /* Page background */
+        .stApp {
+            background-color: #C0CFB2;
+        }
 
-### Benefits:
-- **Fast and Accurate**: Our AI-powered tool provides quick analysis to help you make timely decisions.
-- **Comprehensive Crop Coverage**: Works for a wide range of crop types to ensure flexibility.
-- **Disease Prediction**: Get insights into potential diseases to take early action for better crop health.
+        /* Header and subheaders styling */
+        h1, h2, h3, h4 {
+            color: #2e4053;
+            font-family: 'Georgia', serif;
+        }
 
-**Upload your crop images and gain actionable insights in seconds to optimize your farming process!** 
+        /* Sidebar styling */
+        section[data-testid="stSidebar"] {
+            background-color: #8B998C;
+            color: black;
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        /* Sidebar content styling */
+        section[data-testid="stSidebar"] .block-container {
+            padding: 1rem;
+            
+        }
+        
+
+        /* Panel styling */
+        .feature-panel {
+            background-color: #ebebe2;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        .feature-panel p{
+            font-size: 25px;         
+            font-family: 'Lora', serif;  
+            font-weight: 400;        
+            line-height: 1.5;        
+            color: #333;  
+        }
+
+        .feature-title{
+            font-size: 32px;               
+    font-family: 'Helvetica Neue', sans-serif; 
+    font-weight: 700;            
+    color: #4F684B;              
+    text-align: center;           
+    letter-spacing: 1px;          
+    text-transform: uppercase;    
+    margin-bottom: 20px;          
+    padding: 10px 0;              
+    border-bottom: 2px solid #939c80
+        }
+
+        /* Hero section styling */
+        .hero {
+            padding: 40px;
+            color: white;
+            text-align: center;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            font-size: 30px;
+        }
+
+        /* Hero image text */
+        .hero-text {
+            font-size: 30px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .hero-image {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Benefits section */
+        .benefits {
+            font-size: 20px;
+            color: #2c3e50;
+            line-height: 1.6;
+            margin: 30px 0;
+            font-family: 'Lora', serif;
+        }
+
+        /* Benefit Heading */
+        .benefits h2 {
+            font-size: 24px;
+            font-weight: bold;
+            color: #9ca089;
+            margin-bottom: 30px;
+        }
+
+        /* Flexbox layout for small squares */
+        .benefit-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+            width: 100px;
+            margin: 10px;
+            background-color: #868b6b;
+            border-radius: 8px;
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Carousel container for the benefits */
+        .carousel-container {
+            display: flex;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        /* Style for individual carousel items */
+        .carousel-item {
+            flex-shrink: 0;
+            width: 200px;
+            height: 120px;
+            background-color: #e1dbcb;
+            border-radius: 8px;
+            margin-right: 20px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .carousel-item:hover {
+            background-color: #cec8b2;
+        }
+
+        .carousel-item p {
+            font-size: 14px;
+            color: #2c3e50;
+        }
+    </style>
+""", unsafe_allow_html=True)
+
+
+# Create two columns for text and image side by side
+col1, col2 = st.columns([2, 3])  # First column for text, second for image
+
+with col1:
+    st.markdown("<h1>🌾 Welcome to Farmers' Crop Assistant</h1>", unsafe_allow_html=True)
+    st.write("""
+Your AI-powered tool for crop recognition, health evaluation, and disease detection. 
+Start by uploading your crop images, and let us help you optimize your farming process.
+
+Whether you're a small-scale farmer or managing a large farm, this tool helps you make data-driven decisions that can significantly enhance your crop yield and quality. 
+By analyzing your crop images, you can quickly detect any issues and take proactive steps to prevent diseases, saving time and reducing the need for excessive pesticide use.
 """)
+with col2:
+    st.image(image)
+
+# Feature Panels
+st.markdown("""
+<div class="feature-panel">
+    <div class="feature-title">🌾 Crop Recognition</div>
+    <p>Identify the type of crop by uploading an image. Our system leverages advanced machine learning models to recognize a wide variety of crops with high accuracy.</p>
+</div>
+
+<div class="feature-panel">
+    <div class="feature-title">🩺 Health Status Evaluation</div>
+    <p>Check the health of your crop by uploading an image. The tool analyzes the crop image to determine if it’s healthy or showing signs of stress, such as nutrient deficiency or pest attacks.</p>
+</div>
+
+<div class="feature-panel">
+    <div class="feature-title">🦠 Disease Type Prediction</div>
+    <p>If your crop is classified as unhealthy, this feature enables you to get a more detailed analysis. Upload an image of the affected crop, and our system will attempt to identify specific diseases, helping you take preventive or corrective measures.</p>
+</div>
+
+<!-- Benefits Section -->
+<div class="benefits">
+    <h2>Benefits:</h2>
+    <div class="carousel-container">
+    <div class="carousel-item">
+        <div class="benefit-item">Fast & Accurate</div>
+        <p>Our AI-powered tool provides quick analysis to help you make timely decisions.</p>
+    </div>
+    <div class="carousel-item">
+        <div class="benefit-item">Comprehensive Coverage</div>
+        <p>Works for a wide range of crop types to ensure flexibility.</p>
+    </div>
+    <div class="carousel-item">
+        <div class="benefit-item">Disease Prediction</div>
+        <p>Get insights into potential diseases to take early action for better crop health.</p>
+    </div>
+    <div class="carousel-item">
+        <div class="benefit-item">Actionable Insights</div>
+        <p>Make data-driven decisions with instant crop analysis.</p>
+    </div>
+    <!-- New benefits -->
+    <div class="carousel-item">
+        <div class="benefit-item">Saves Time</div>
+        <p>Automates the crop analysis process, saving valuable time for farmers.</p>
+    </div>
+    <div class="carousel-item">
+        <div class="benefit-item">Easy to Use</div>
+        <p>User-friendly interface that allows farmers to quickly upload images and receive insights.</p>
+    </div>
+    <div class="carousel-item">
+        <div class="benefit-item">Continuous Learning</div>
+        <p>Improves over time by learning from new crop images and data for better accuracy.</p>
+    </div>
+    <div class="carousel-item">
+        <div class="benefit-item">Real-time Results</div>
+        <p>Receive immediate feedback and analysis, allowing you to take instant action.</p>
+    </div>
+    <div class="carousel-item">
+        <div class="benefit-item">Accessible Anywhere</div>
+        <p>Access the tool from any device, enabling farmers to use it on-site or remotely.</p>
+    </div>
+    <div class="carousel-item">
+        <div class="benefit-item">Supports Crop Growth</div>
+        <p>Helps farmers monitor and nurture their crops, optimizing growth and yield.</p>
+    </div>
+</div>
+
+</div>
+""", unsafe_allow_html=True)
 
 
-# Step-by-step Instructions
-st.sidebar.title("How to Use This Tool")
-st.sidebar.write("""
-1. **Step 1: Crop Recognition**: Upload an image of your crop to identify its type.
-2. **Step 2: Health Status Evaluation**: Upload an image to check your crop's health.
-3. **Step 3: Disease Classification**: If the crop is unhealthy, upload an image to predict possible diseases.
-""")
+# Custom HTML for styled sidebar
+st.sidebar.markdown(
+    """
+    <div style="font-family: 'Georgia', serif; color: #2c3e50;">
+        <h2 style="font-size: 40px; font-weight: bold; color: white; margin-bottom: 20px;">
+            How to Use This Tool
+        </h2>
+        <p style="font-size: 25px; line-height: 1.6; color: #555;">
+            <strong style="color: #4f7046;">Step 1:</strong> Crop Recognition: Upload an image of your crop to identify its type.
+        </p>
+        <p style="font-size: 25px; line-height: 1.6; color: #555;">
+            <strong style="color: #4f7046;">Step 2:</strong> Health Status Evaluation: Upload an image to check your crop's health.
+        </p>
+        <p style="font-size: 25px; line-height: 1.6; color: #555;">
+            <strong style="color: #4f7046;">Step 3:</strong> Disease Classification: If the crop is unhealthy, upload an image to predict possible diseases.
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+
 
 # Section 1: Crop Recognition
 st.header("Step 1: Crop Recognition")
